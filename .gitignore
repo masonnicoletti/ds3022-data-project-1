@@ -2,6 +2,7 @@
 
 # Parquet Files
 data/*.parquet
+*.parquet
 
 # Log files
 *.log
