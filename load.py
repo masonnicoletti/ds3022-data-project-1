@@ -1,6 +1,7 @@
 import duckdb
 import os
 import logging
+import time
 
 logging.basicConfig(
     level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s',
@@ -56,6 +57,9 @@ def load_parquet_files():
                 SELECT * FROM read_parquet('{green_tripdata_file}');
             """)
             logger.info(f"Imported green_tripdata_2024-{month} data to db") 
+            
+            # Limit file loading rate
+            time.sleep(60)
 
         # Add data to vehicle_emissions table
         con.execute(f"""
@@ -64,9 +68,58 @@ def load_parquet_files():
         """)
         logger.info("Added vehicle_emissions data to db")
 
+        # Save yellow_tripdata to repo as a parquet file
+        con.execute(f"""
+            COPY yellow_tripdata TO 'data/yellow_tripdata.parquet' (FORMAT PARQUET);
+        """)
+        logger.info("Saved yellow_tripdata parquet file")
+
+        # Save green_tripdata to repo as a parquet file
+        con.execute(f"""
+            COPY green_tripdata TO 'data/green_tripdata.parquet' (FORMAT PARQUET);
+        """)
+        logger.info("Saved green_tripdata parquet file")
+
+        # Output basic data statistics for yellow_tripdata
+        yellow_tripdata_stats = con.execute("""
+            SELECT 
+                COUNT(*) AS row_count,
+                AVG(trip_distance) AS average_distance,
+                AVG(fare_amount) AS average_fare
+            FROM yellow_tripdata;
+        """).fetchdf()
+        print("Yellow Trip Data Stats:\n", yellow_tripdata_stats)
+        logger.info(f"Calculated basic statistics for yellow_tripdata:\n{yellow_tripdata_stats}")
+
+        # Output basic data statistics for green_tripdata
+        green_tripdata_stats = con.execute("""
+            SELECT 
+                COUNT(*) AS row_count,
+                AVG(trip_distance) AS average_distance,
+                AVG(fare_amount) AS average_fare
+            FROM green_tripdata;
+        """).fetchdf()
+        print("Green Trip Data Stats:\n", green_tripdata_stats)
+        logger.info(f"Calculated basic statistics for green_tripdata:\n{green_tripdata_stats}")
+
+        # Output basic data statistics fro vehicle_emissions
+        vehicle_emissions_stats = con.execute("""
+            SELECT
+                COUNT(*) AS row_count,
+                MIN(co2_grams_per_mile) AS min_co2_grams_per_mile,
+                MAX(co2_grams_per_mile) AS max_co2_grams_per_mile
+            FROM vehicle_emissions;
+        """).fetchdf()
+        print("Vehicle Emissions Data Stats:\n", vehicle_emissions_stats)
+        logger.info(f"Calculated basic statistics for vehicle_emissions:\n{vehicle_emissions_stats}")
+
     except Exception as e:
         print(f"An error occurred: {e}")
         logger.error(f"An error occurred: {e}")
+
+    # Close DuckDB connection
+    con.close()
+    logger.info("Data Loading Complete")
 
 if __name__ == "__main__":
     load_parquet_files()

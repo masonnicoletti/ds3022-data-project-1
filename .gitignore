@@ -1,1 +1,8 @@
+# Files not pushed to remote repo
+
+# Log files
+*.log
+
+# Database files
+*.db
 *.duckdb
