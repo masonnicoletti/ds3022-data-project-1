@@ -1,5 +1,8 @@
 # Files not pushed to remote repo
 
+# Parquet Files
+*.parquet
+
 # Log files
 *.log
 
