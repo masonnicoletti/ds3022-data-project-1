@@ -5,13 +5,16 @@ import time
 
 logging.basicConfig(
     level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s',
-    filename='logs/load.log'
+    filename='logs/load.log',
+    filemode='w'
 )
 logger = logging.getLogger(__name__)
 
 month_list = ["01", "02", "03", "04", "05", "06", "07", "08", "09", "10", "11", "12"]
 
 def load_parquet_files():
+
+    logger.info("-- Data Loading Started --")
 
     con = None
 
@@ -113,13 +116,15 @@ def load_parquet_files():
         print("Vehicle Emissions Data Stats:\n", vehicle_emissions_stats)
         logger.info(f"Calculated basic statistics for vehicle_emissions:\n{vehicle_emissions_stats}")
 
+        # Close DuckDB connection
+        con.close()
+        logger.info("Closed DuckDB connection")
+
     except Exception as e:
         print(f"An error occurred: {e}")
         logger.error(f"An error occurred: {e}")
 
-    # Close DuckDB connection
-    con.close()
-    logger.info("Data Loading Complete")
+    logger.info("-- Data Loading Complete --")
 
 if __name__ == "__main__":
     load_parquet_files()
