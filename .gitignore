@@ -5,8 +5,10 @@ data/*.parquet
 *.parquet
 
 # Log files
+logs/*.log
 *.log
 
 # Database files
 *.db
 *.duckdb
+
