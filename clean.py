@@ -1,6 +1,9 @@
+from re import T
 import duckdb
 import os
 import logging
+
+from numpy import long
 
 logging.basicConfig(
     level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s',
@@ -9,6 +12,7 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
+# Function for data cleaning
 def clean_tripdata_tables():
 
     logger.info("-- Data Cleaning Started --")
@@ -43,14 +47,16 @@ def clean_tripdata_tables():
         # Remove trips with 0 passengers from yellow_tripdata
         con.execute("""
             DELETE FROM yellow_tripdata
-            WHERE passenger_count = 0;
+            WHERE passenger_count = 0
+            OR passenger_count IS NULL;
         """)
         logger.info("Removed trips with 0 passengers from yellow_tripdata")
 
         # Remove trips with 0 passengers from green_tripdata
         con.execute("""
             DELETE FROM green_tripdata
-            WHERE passenger_count = 0;
+            WHERE passenger_count = 0 
+            OR passenger_count IS NULL;
         """)
         logger.info("Removed trips with 0 passengers from green_tripdata")
 
@@ -99,12 +105,123 @@ def clean_tripdata_tables():
         # Close DuckDB connection
         con.close()
         logger.info("Closed DuckDB connection")
+
+        logger.info("-- Data Cleaning Complete --")
     
     except Exception as e:
         print(f"An error occurred: {e}")
         logger.error(f"An error occurred: {e}")
+
+
+# Function to verify data cleaning results
+def tripdata_cleaning_tests():
     
-    logger.info("-- Data Cleaning Complete --")
+    con = None
+
+    try:
+        # Connect to local DuckDB instance
+        con = duckdb.connect(database='emissions.duckdb', read_only=False)
+        logger.info("Connected to DuckDB instance")
+
+        # Verify no duplicate trips in yellow_tripdata
+        yellow_duplicates = con.execute(f"""
+            SELECT COALESCE(SUM(duplicate_count - 1), 0) FROM (
+                SELECT COUNT(*) AS duplicate_count FROM yellow_tripdata 
+                GROUP BY VendorID, tpep_pickup_datetime, tpep_dropoff_datetime, trip_distance, RatecodeID, PULocationID, DOLocationID, total_amount, tip_amount 
+                HAVING COUNT(*) > 1
+            ) AS duplicates;
+        """).fetchone()
+        print(f"Number of duplicates in yellow_tripdata: {yellow_duplicates[0]}")
+        logger.info(f"Number of duplicates in yellow_tripdata: {yellow_duplicates[0]}")
+
+        # Verify no duplicate trips in green_tripdata
+        green_duplicates = con.execute(f"""
+            SELECT COALESCE(SUM(duplicate_count - 1), 0) FROM (
+                SELECT COUNT(*) AS duplicate_count FROM green_tripdata 
+                GROUP BY VendorID, lpep_pickup_datetime, lpep_dropoff_datetime, trip_distance, RatecodeID, PULocationID, DOLocationID, total_amount, tip_amount 
+                HAVING COUNT(*) > 1
+            ) AS duplicates;
+        """).fetchone()
+        print(f"Number of duplicates in green_tripdata: {green_duplicates[0]}")
+        logger.info(f"Number of duplicates in green_tripdata: {green_duplicates[0]}")
+
+        # Verify no trips with 0 passengers in yellow_tripdata
+        yellow_zero_passengers = con.execute(f"""
+            SELECT COUNT(*) FROM yellow_tripdata
+            WHERE passenger_count = 0
+            OR passenger_count IS NULL;
+        """).fetchone()
+        print(f"Number of trips with 0 passengers in yellow_tripdata: {yellow_zero_passengers[0]}")
+        logger.info(f"Number of trips with 0 passengers in yellow_tripdata: {yellow_zero_passengers[0]}")
+
+         # Verify no trips with 0 passengers in green_tripdata
+        green_zero_passengers = con.execute(f"""
+            SELECT COUNT(*) FROM green_tripdata
+            WHERE passenger_count = 0
+            OR passenger_count IS NULL;
+        """).fetchone()
+        print(f"Number of trips with 0 passengers in green_tripdata: {green_zero_passengers[0]}")
+        logger.info(f"Number of trips with 0 passengers in green_tripdata: {green_zero_passengers[0]}")
+
+        # Verify no trips with 0 miles in yellow_tripdata
+        yellow_zero_miles = con.execute(f"""
+            SELECT COUNT(*) FROM yellow_tripdata
+            WHERE trip_distance = 0;
+        """).fetchone()
+        print(f"Number of trips with zero miles in yellow_tripdata: {yellow_zero_miles[0]}")
+        logger.info(f"Number of trips with zero miles in yellow_tripdata: {yellow_zero_miles[0]}")
+
+        # Verify no trips with 0 miles in green_tripdata
+        green_zero_miles = con.execute(f"""
+            SELECT COUNT(*) FROM green_tripdata
+            WHERE trip_distance = 0;
+        """).fetchone()
+        print(f"Number of trips with zero miles in green_tripdata: {green_zero_miles[0]}")
+        logger.info(f"Number of trips with zero miles in green_tripdata: {green_zero_miles[0]}")
+
+        # Verify no trips longer than 100 miles in yellow_tripdata
+        yellow_hundred_miles = con.execute(f"""
+            SELECT COUNT(*) FROM yellow_tripdata
+            WHERE trip_distance > 100;
+        """).fetchone()
+        print(f"Number of trips longer than 100 miles in yellow_tripdata: {yellow_hundred_miles[0]}")
+        logger.info(f"Number of trips longer than 100 miles in yellow_tripdata: {yellow_hundred_miles[0]}")
+
+        # Verify no trips longer than 100 miles in green_tripdata
+        green_hundred_miles = con.execute(f"""
+            SELECT COUNT(*) FROM green_tripdata
+            WHERE trip_distance > 100;
+        """).fetchone()
+        print(f"Number of trips longer than 100 miles in green_tripdata: {green_hundred_miles[0]}")
+        logger.info(f"Number of trips longer than 100 miles in green_tripdata: {green_hundred_miles[0]}")
+
+        # Verify no trips longer than 24 hours in yellow_tripdata
+        yellow_long_trips = con.execute(f"""
+            SELECT COUNT(*) FROM yellow_tripdata
+            WHERE (tpep_dropoff_datetime - tpep_pickup_datetime) > INTERVAL '24 hours'; 
+        """).fetchone()
+        print(f"Number of trips longer than 24 hours in yellow_tripdata: {yellow_long_trips[0]}")
+        logger.info(f"Number of trips longer than 24 hours in yellow_tripdata: {yellow_long_trips[0]}")
+
+        # Verify no trips longer than 24 hours in green_tripdata
+        green_long_trips = con.execute(f"""
+            SELECT COUNT(*) FROM green_tripdata
+            WHERE (lpep_dropoff_datetime - lpep_pickup_datetime) > INTERVAL '24 hours'; 
+        """).fetchone() 
+        print(f"Number of trips longer than 24 hours in green_tripdata: {green_long_trips[0]}")
+        logger.info(f"Number of trips longer than 24 hours in green_tripdata: {green_long_trips[0]}")
+
+        # Close DuckDB connection
+        con.close()
+        logger.info("Closed DuckDB connection")
+
+    except Exception as e:
+        print(f"An error occurred: {e}")
+        logger.error(f"An error occurred: {e}")
+    
+    logger.info("-- Data Cleaning Verification Complete --")
+
 
 if __name__ == "__main__":
     clean_tripdata_tables()
+    tripdata_cleaning_tests()
