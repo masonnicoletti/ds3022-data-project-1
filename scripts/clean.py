@@ -137,22 +137,24 @@ def tripdata_cleaning_tests():
 
         # Verify no duplicate trips in yellow_tripdata
         yellow_duplicates = con.execute(f"""
-            SELECT COALESCE(SUM(duplicate_count - 1), 0) FROM (
-                SELECT COUNT(*) AS duplicate_count FROM yellow_tripdata 
-                GROUP BY VendorID, tpep_pickup_datetime, tpep_dropoff_datetime, trip_distance, RatecodeID, PULocationID, DOLocationID, total_amount, tip_amount 
-                HAVING COUNT(*) > 1
-            ) AS duplicates;
+            SELECT COUNT(*) - COUNT(DISTINCT ROW(
+                VendorID, tpep_pickup_datetime, tpep_dropoff_datetime, passenger_count, trip_distance, 
+                RatecodeID, PULocationID, DOLocationID, payment_type, fare_amount, extra, mta_tax, tip_amount, 
+                tolls_amount, improvement_surcharge, total_amount, congestion_surcharge, Airport_fee
+                )) AS duplicates
+            FROM yellow_tripdata;
         """).fetchone()
         print(f"Number of duplicates in yellow_tripdata: {yellow_duplicates[0]}")
         logger.info(f"Number of duplicates in yellow_tripdata: {yellow_duplicates[0]}")
 
         # Verify no duplicate trips in green_tripdata
         green_duplicates = con.execute(f"""
-            SELECT COALESCE(SUM(duplicate_count - 1), 0) FROM (
-                SELECT COUNT(*) AS duplicate_count FROM green_tripdata 
-                GROUP BY VendorID, lpep_pickup_datetime, lpep_dropoff_datetime, trip_distance, RatecodeID, PULocationID, DOLocationID, total_amount, tip_amount 
-                HAVING COUNT(*) > 1
-            ) AS duplicates;
+            SELECT COUNT(*) - COUNT(DISTINCT ROW(
+                VendorID, lpep_pickup_datetime, lpep_dropoff_datetime, store_and_fwd_flag,
+                RatecodeID, PULocationID, DOLocationID, passenger_count, trip_distance, fare_amount, extra, mta_tax, tip_amount, 
+                tolls_amount, ehail_fee, improvement_surcharge, total_amount, payment_type, trip_type, congestion_surcharge
+                )) AS duplicates
+            FROM green_tripdata;
         """).fetchone()
         print(f"Number of duplicates in green_tripdata: {green_duplicates[0]}")
         logger.info(f"Number of duplicates in green_tripdata: {green_duplicates[0]}")

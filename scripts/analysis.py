@@ -1,3 +1,4 @@
+from re import T
 import duckdb
 import logging
 import pandas as pd
@@ -202,22 +203,22 @@ def taxi_analysis():
         ax1.set_ylabel("Yellow Taxi CO2 Emissions (kg)")
         line1 = ax1.plot(yellow_monthly_totals['month_of_year'], yellow_monthly_totals['total_co2'], 
                         label="Yellow Taxi", color='gold', marker='o', linewidth=2)
-        ax1.set_ylim(bottom=0, top=5000000)
+        ax1.set_ylim(bottom=0, top=max(1, yellow_monthly_totals['total_co2'].max()*1.2))
         ax2 = ax1.twinx()
         ax2.set_ylabel("Green Taxi CO2 Emissions (kg)")
         line2 = ax2.plot(green_monthly_totals['month_of_year'], green_monthly_totals['total_co2'], 
                         label="Green Taxi", color='green', marker='o', linewidth=2)
-        ax2.set_ylim(bottom=0, top=65000)
+        ax2.set_ylim(bottom=0, top=max(1, green_monthly_totals['total_co2'].max()*1.2))
         
-        plt.title("Total Monthly CO2 Emissions")
+        ax1.set_title("Total Monthly CO2 Emissions")
         month_list = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
-        plt.xticks(range(1,13), month_list, rotation=45)
+        ax1.set_xticks(range(1,13), month_list, rotation=45)
         lines = line1 + line2
         labels = [l.get_label() for l in lines]
         ax1.legend(lines, labels, loc='upper left')
         
-        plt.savefig("../plots/total_monthly_emissions.png")
-        plt.close()
+        fig.savefig("../plots/total_monthly_emissions.png")
+        plt.close(fig)
         logger.info("Plotted total monthly carbon emissions")
 
         # Close DuckDB connection
