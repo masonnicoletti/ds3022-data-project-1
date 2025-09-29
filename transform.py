@@ -109,7 +109,7 @@ def tripdata_transformations():
             DROP COLUMN IF EXISTS day_of_week;
 
             ALTER TABLE yellow_tripdata
-            ADD COLUMN day_of_week INTEGER;
+            ADD COLUMN day_of_week INTEGER; 
 
             UPDATE yellow_tripdata
             SET day_of_week = DAYOFWEEK(tpep_pickup_datetime);
