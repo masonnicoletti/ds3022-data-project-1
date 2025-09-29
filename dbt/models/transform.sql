@@ -1,6 +1,6 @@
 {{ config(materialized='table') }}
 
--- Calculate CO2 (kg) per trip
+-- Calculate CO2 (kg) per trip and add to yellow taxi data
 SELECT 
     y.*,
     (y.trip_distance * v.co2_grams_per_mile) / 1000.0 AS trip_co2_kgs

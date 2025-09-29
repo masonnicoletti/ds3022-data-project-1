@@ -3,8 +3,6 @@ import duckdb
 import os
 import logging
 
-from numpy import long
-
 logging.basicConfig(
     level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s',
     filename='logs/clean.log',
@@ -101,6 +99,20 @@ def clean_tripdata_tables():
             WHERE (lpep_dropoff_datetime - lpep_pickup_datetime) > INTERVAL '24 hours';
         """)
         logger.info("Removed trips longer than 24 hours from green_tripdata")
+
+        # Remove trips a negative or zero duration from yellow_tripdata
+        con.execute("""
+            DELETE FROM yellow_tripdata
+            WHERE EXTRACT(EPOCH FROM (tpep_dropoff_datetime - tpep_pickup_datetime)) <= 0
+        """)
+        logger.info("Removed trips with no duration from yellow_tripdata")
+
+        # Remove trips a negative or zero duration from green_tripdata
+        con.execute("""
+            DELETE FROM green_tripdata
+            WHERE EXTRACT(EPOCH FROM (lpep_dropoff_datetime - lpep_pickup_datetime)) <= 0
+        """)
+        logger.info("Removed trips with no duration from green_tripdata")
 
         # Close DuckDB connection
         con.close()
