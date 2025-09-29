@@ -61,14 +61,14 @@ def clean_tripdata_tables():
         # Remove trips with 0 miles from yellow_tripdata
         con.execute("""
             DELETE FROM yellow_tripdata
-            WHERE trip_distance = 0;
+            WHERE trip_distance <= 0;
         """)
         logger.info("Removed trips with 0 miles from yellow_tripdata")
 
         # Remove trips with 0 miles from green_tripdata
         con.execute("""
             DELETE FROM green_tripdata
-            WHERE trip_distance = 0;
+            WHERE trip_distance <= 0;
         """)
         logger.info("Removed trips with 0 miles from green_tripdata")
 
@@ -180,7 +180,7 @@ def tripdata_cleaning_tests():
         # Verify no trips with 0 miles in yellow_tripdata
         yellow_zero_miles = con.execute(f"""
             SELECT COUNT(*) FROM yellow_tripdata
-            WHERE trip_distance = 0;
+            WHERE trip_distance <= 0;
         """).fetchone()
         print(f"Number of trips with zero miles in yellow_tripdata: {yellow_zero_miles[0]}")
         logger.info(f"Number of trips with zero miles in yellow_tripdata: {yellow_zero_miles[0]}")
@@ -188,7 +188,7 @@ def tripdata_cleaning_tests():
         # Verify no trips with 0 miles in green_tripdata
         green_zero_miles = con.execute(f"""
             SELECT COUNT(*) FROM green_tripdata
-            WHERE trip_distance = 0;
+            WHERE trip_distance <= 0;
         """).fetchone()
         print(f"Number of trips with zero miles in green_tripdata: {green_zero_miles[0]}")
         logger.info(f"Number of trips with zero miles in green_tripdata: {green_zero_miles[0]}")
