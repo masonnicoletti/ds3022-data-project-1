@@ -1,3 +1,6 @@
+# Transform completed using dbt
+
+'''
 import duckdb
 import logging
 
@@ -194,3 +197,4 @@ def tripdata_transformations():
 
 if __name__ == "__main__":
     tripdata_transformations()
+'''
